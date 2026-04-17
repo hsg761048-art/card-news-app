@@ -47,10 +47,14 @@ export async function generatePixabayImageUrls(
   onProgress(0, targets.length, 'Pixabay 이미지 검색 중...');
 
   const perPage = Math.min(targets.length + 3, 20);
-  const apiUrl = `https://pixabay.com/api/?key=${pixabayKey.trim()}`
-    + `&q=${encodeURIComponent(keyword)}`
-    + `&image_type=photo&orientation=${orient}`
-    + `&per_page=${perPage}&safesearch=true&min_width=400`;
+  // 서버 API route 경유 (CORS 문제 없음)
+  const params = new URLSearchParams({
+    q: keyword,
+    orientation: orient,
+    per_page: String(perPage),
+    key: pixabayKey.trim(),
+  });
+  const apiUrl = `/api/pixabay?${params}`;
 
   const res = await fetch(apiUrl);
   if (!res.ok) {

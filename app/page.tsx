@@ -35,7 +35,10 @@ export default function Home() {
   const [inputType,     setInputType]     = useState<InputType>('keyword');
   const [inputData,     setInputData]     = useState('');
   const [imgSource,     setImgSource]     = useState<ImgSource>('canva');
-  const [pixabayKey,    setPixabayKey]    = useState('');
+  const [pixabayKey,    setPixabayKey]    = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('pixabay_api_key') || '';
+  });
   const [format,        setFormat]        = useState('1:1');
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [cards,         setCards]         = useState<Card[]>([]);
@@ -192,7 +195,10 @@ export default function Home() {
             imgSource={imgSource}
             setImgSource={setImgSource}
             pixabayKey={pixabayKey}
-            setPixabayKey={setPixabayKey}
+            setPixabayKey={(k) => {
+              setPixabayKey(k);
+              try { localStorage.setItem('pixabay_api_key', k); } catch {}
+            }}
             savedSession={savedSession}
             onLoadSession={handleLoadSession}
             onDeleteSession={handleDeleteSession}
