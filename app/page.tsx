@@ -48,6 +48,8 @@ export default function Home() {
   const [savedSession,  setSavedSession]  = useState<CardNews | null>(loadSavedSession);
   const [showHistory,   setShowHistory]   = useState(false);
   const [isSaving,      setIsSaving]      = useState(false);
+  const [geminiModel,   setGeminiModel]   = useState('');
+  const [geminiConnected, setGeminiConnected] = useState(false);
   const [saveMsg,       setSaveMsg]       = useState('');
   const [errorMsg,      setErrorMsg]      = useState('');
 
@@ -78,7 +80,7 @@ export default function Home() {
     };
     persistSession(session);
     setSavedSession({ ...session, savedAt: Date.now() });
-
+    setGeminiConnected(true);
     setStep('editor');
   }, []);
 
@@ -168,7 +170,11 @@ export default function Home() {
 
   return (
     <div className="page-container">
-      <Header onOpenHistory={user ? () => setShowHistory(true) : undefined} />
+      <Header
+        onOpenHistory={user ? () => setShowHistory(true) : undefined}
+        geminiConnected={geminiConnected}
+        geminiModel={geminiModel}
+      />
 
       <main className="main-content">
         <StepProgress step={step} />
@@ -214,6 +220,7 @@ export default function Home() {
             format={format}
             onComplete={handleProcessComplete}
             onError={(msg) => { setErrorMsg(msg); setStep('input'); }}
+            onModelDetected={(m) => { setGeminiModel(m); setGeminiConnected(true); }}
           />
         )}
 

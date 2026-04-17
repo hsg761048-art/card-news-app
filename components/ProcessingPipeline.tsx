@@ -30,11 +30,12 @@ interface ProcessingPipelineProps {
   format?: string;
   onComplete: (data: ProcessedData) => void;
   onError: (msg: string) => void;
+  onModelDetected?: (model: string) => void;
 }
 
 export default function ProcessingPipeline({
   inputType, inputData, imgSource, pixabayKey = '', format = '1:1',
-  onComplete, onError,
+  onComplete, onError, onModelDetected,
 }: ProcessingPipelineProps) {
   const [steps, setSteps] = useState<Step[]>([
     { label: '텍스트 정제 & 확장', status: 'pending' },
@@ -61,7 +62,7 @@ export default function ProcessingPipeline({
         try {
           text = await geminiExpandText(inputType, inputData);
           addLog(`✅ 텍스트 정제 완료 (${text.length}자)`);
-          if (activeModel) addLog(`🤖 모델: ${activeModel}`);
+          if (activeModel) { addLog(`🤖 모델: ${activeModel}`); onModelDetected?.(activeModel); }
         } catch (e: any) {
           addLog('⚠️ Gemini 오류 — 데모 모드로 전환');
           text = inputData;
