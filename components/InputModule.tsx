@@ -124,9 +124,23 @@ export default function InputModule({
 
         <form onSubmit={handleSubmit}>
           {inputType === 'keyword' && (
-            <input type="text" value={inputData} onChange={e => setInputData(e.target.value)}
-              placeholder="예: 직장인 번아웃 극복법, AI 트렌드 2025"
-              style={{ marginBottom: 16 }} />
+            <div style={{ marginBottom: 16 }}>
+              <input type="text" value={inputData} onChange={e => setInputData(e.target.value)}
+                placeholder="아이디어/주제를 짧게 입력하면 AI가 내용을 만들어 드려요"
+                style={{ marginBottom: 10 }} />
+              {/* 추천 키워드 */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {['번아웃 극복법','AI 트렌드 2026','인스타 성장 전략','건강한 아침 루틴','주식 투자 입문','생산성 높이는 방법','마음챙김 명상','디지털 디톡스'].map(kw => (
+                  <button key={kw} type="button" onClick={() => setInputData(kw)} style={{
+                    padding: '5px 12px', borderRadius: 99, fontSize: 12,
+                    background: inputData === kw ? 'rgba(108,99,255,0.25)' : 'rgba(255,255,255,0.06)',
+                    color: inputData === kw ? '#a78bfa' : 'rgba(255,255,255,0.55)',
+                    border: inputData === kw ? '1px solid rgba(108,99,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                    cursor: 'pointer', transition: 'all .15s',
+                  }}>{kw}</button>
+                ))}
+              </div>
+            </div>
           )}
           {inputType === 'url' && (
             <input type="text" value={inputData} onChange={e => setInputData(e.target.value)}

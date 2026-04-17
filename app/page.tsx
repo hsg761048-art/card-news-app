@@ -232,6 +232,7 @@ export default function Home() {
             format={format}
             imgSource={imgSource}
             onCardsChange={handleCardsChange}
+            onFormatChange={setFormat}
             onNext={() => setStep('export')}
             onBack={() => setStep('input')}
             isSaving={isSaving}

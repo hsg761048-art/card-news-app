@@ -3,23 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { InputType, ImgSource, ProcessedData } from '@/types';
 import {
-  geminiExpandText,
-  geminiDetectCategory,
-  geminiGenerateCards,
-  demoDetectCategory,
-  demoGenerateCards,
-  activeModel,
+  geminiExpandText, geminiDetectCategory, geminiGenerateCards,
+  demoDetectCategory, demoGenerateCards, activeModel,
 } from '@/lib/geminiClient';
 import {
-  generateCardImageUrls,
-  generateCanvaTemplateMap,
-  generatePixabayImageUrls,
+  generateCardImageUrls, generateCanvaTemplateMap, generatePixabayImageUrls,
 } from '@/lib/imageUtils';
 
-interface Step {
+interface PipelineStep {
   label: string;
+  sub: string;
   status: 'pending' | 'running' | 'done' | 'error';
-  detail?: string;
+  badge?: string;
 }
 
 interface ProcessingPipelineProps {
@@ -37,18 +32,17 @@ export default function ProcessingPipeline({
   inputType, inputData, imgSource, pixabayKey = '', format = '1:1',
   onComplete, onError, onModelDetected,
 }: ProcessingPipelineProps) {
-  const [steps, setSteps] = useState<Step[]>([
-    { label: '텍스트 정제 & 확장', status: 'pending' },
-    { label: '카테고리 분류',       status: 'pending' },
-    { label: '카드 슬라이드 생성',  status: 'pending' },
-    { label: '배경 이미지 준비',    status: 'pending' },
+  const [steps, setSteps] = useState<PipelineStep[]>([
+    { label: '텍스트 추출 및 정제', sub: 'Gemini Flash', status: 'pending' },
+    { label: '콘텐츠 카테고리 분류', sub: 'Gemini Flash', status: 'pending' },
+    { label: '카드뉴스 슬라이드 생성', sub: 'Gemini Flash', status: 'running' },
+    { label: 'AI 배경 이미지 생성', sub: 'Pollinations · Turbo', status: 'pending' },
   ]);
-  const [log, setLog]   = useState<string[]>([]);
+  const [progress, setProgress] = useState(0);
   const ran = useRef(false);
 
-  const setStep = (i: number, patch: Partial<Step>) =>
+  const setStep = (i: number, patch: Partial<PipelineStep>) =>
     setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, ...patch } : s));
-  const addLog = (msg: string) => setLog(prev => [...prev, msg]);
 
   useEffect(() => {
     if (ran.current) return;
@@ -56,20 +50,20 @@ export default function ProcessingPipeline({
 
     async function run() {
       try {
-        // Step 0: expand text
+        // Step 0
         setStep(0, { status: 'running' });
+        setProgress(10);
         let text = '';
         try {
           text = await geminiExpandText(inputType, inputData);
-          addLog(`✅ 텍스트 정제 완료 (${text.length}자)`);
-          if (activeModel) { addLog(`🤖 모델: ${activeModel}`); onModelDetected?.(activeModel); }
-        } catch (e: any) {
-          addLog('⚠️ Gemini 오류 — 데모 모드로 전환');
+          if (activeModel) { onModelDetected?.(activeModel); }
+        } catch {
           text = inputData;
         }
-        setStep(0, { status: 'done' });
+        setStep(0, { status: 'done', badge: 'Gemini Flash' });
+        setProgress(30);
 
-        // Step 1: detect category
+        // Step 1
         setStep(1, { status: 'running' });
         let category = '';
         try {
@@ -77,10 +71,10 @@ export default function ProcessingPipeline({
         } catch {
           category = demoDetectCategory(text);
         }
-        addLog(`📂 카테고리: ${category}`);
-        setStep(1, { status: 'done', detail: category });
+        setStep(1, { status: 'done', badge: category });
+        setProgress(55);
 
-        // Step 2: generate cards
+        // Step 2
         setStep(2, { status: 'running' });
         let cards;
         try {
@@ -88,95 +82,109 @@ export default function ProcessingPipeline({
         } catch {
           cards = demoGenerateCards(text, category);
         }
-        addLog(`🃏 카드 ${cards.length}장 생성`);
-        setStep(2, { status: 'done', detail: `${cards.length}장` });
+        setStep(2, { status: 'done', badge: `${cards.length}장` });
+        setProgress(75);
 
-        // Step 3: images
+        // Step 3
         setStep(3, { status: 'running' });
         let cardImages: Record<string, string> = {};
+        const imgSub = imgSource === 'canva' ? 'CSS Templates' : imgSource === 'pixabay' ? 'Pixabay' : 'Pollinations · Turbo';
+        setStep(3, { sub: imgSub });
+
         if (imgSource === 'canva') {
           cardImages = generateCanvaTemplateMap(cards);
-          addLog('🎨 Canva 템플릿 적용');
         } else if (imgSource === 'pixabay' && pixabayKey) {
           try {
-            cardImages = await generatePixabayImageUrls(cards, category, format, pixabayKey, (i, total) => {
-              addLog(`📸 Pixabay ${i}/${total}`);
-            });
-          } catch (e: any) {
-            addLog(`⚠️ Pixabay 오류: ${e.message} — Canva 템플릿으로 대체`);
+            cardImages = await generatePixabayImageUrls(cards, category, format, pixabayKey, () => {});
+          } catch {
             cardImages = generateCanvaTemplateMap(cards);
           }
         } else {
           cardImages = generateCardImageUrls(cards, category, format);
-          addLog('🤖 AI 이미지 URL 생성');
         }
         setStep(3, { status: 'done' });
+        setProgress(100);
 
-        onComplete({ text, category, cards, cardImages });
+        setTimeout(() => onComplete({ text, category, cards, cardImages }), 400);
       } catch (e: any) {
         onError(e.message || '처리 중 오류 발생');
       }
     }
-
     run();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const statusIcon = (s: Step['status']) =>
-    s === 'done'    ? '✅'
-    : s === 'running' ? '⏳'
-    : s === 'error'   ? '❌'
-    : '⬜';
+  const doneCount = steps.filter(s => s.status === 'done').length;
 
   return (
-    <div className="card">
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>✨ 카드뉴스 생성 중...</h2>
+    <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 16px' }}>
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 36 }}>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>⚙️</div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>Gemini AI가 분석하고 있습니다</h2>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)' }}>잠시만 기다려 주세요...</p>
+      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+      {/* Progress bar */}
+      <div style={{
+        height: 4, borderRadius: 99,
+        background: 'rgba(255,255,255,0.08)',
+        marginBottom: 24, overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%', borderRadius: 99,
+          background: 'linear-gradient(90deg,#6c63ff,#06b6d4)',
+          width: `${progress}%`,
+          transition: 'width .5s ease',
+        }} />
+      </div>
+
+      {/* Steps */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 14, overflow: 'hidden',
+      }}>
         {steps.map((s, i) => (
           <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '10px 14px', borderRadius: 8,
-            background: s.status === 'running' ? 'rgba(108,99,255,0.1)'
-                      : s.status === 'done'    ? 'rgba(16,185,129,0.08)'
-                      : 'rgba(255,255,255,0.03)',
-            border: `1px solid ${
-              s.status === 'running' ? 'rgba(108,99,255,0.25)'
-              : s.status === 'done'  ? 'rgba(16,185,129,0.2)'
-              : 'rgba(255,255,255,0.06)'
-            }`,
-            transition: 'all .3s',
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '14px 18px',
+            borderBottom: i < steps.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            background: s.status === 'running' ? 'rgba(108,99,255,0.08)' : 'transparent',
+            transition: 'background .3s',
           }}>
-            {s.status === 'running'
-              ? <div className="spinner" />
-              : <span style={{ fontSize: 18 }}>{statusIcon(s.status)}</span>
-            }
-            <span style={{ flex: 1, fontSize: 14 }}>{s.label}</span>
-            {s.detail && (
-              <span className="badge">{s.detail}</span>
-            )}
+            {/* Icon */}
+            <div style={{ width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {s.status === 'done'
+                ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✓</div>
+                : s.status === 'running'
+                ? <div className="spinner" />
+                : <div style={{ width: 18, height: 18, borderRadius: 4, border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)' }} />
+              }
+            </div>
+            {/* Label */}
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 14, fontWeight: s.status === 'running' ? 600 : 400,
+                color: s.status === 'pending' ? 'rgba(255,255,255,0.35)' : '#fff',
+              }}>{s.label}</div>
+            </div>
+            {/* Badge */}
+            <div style={{
+              fontSize: 11, padding: '3px 10px', borderRadius: 99,
+              background: s.status === 'running' ? 'rgba(108,99,255,0.3)' : 'rgba(255,255,255,0.06)',
+              color: s.status === 'running' ? '#a78bfa' : 'rgba(255,255,255,0.4)',
+              border: s.status === 'running' ? '1px solid rgba(108,99,255,0.4)' : '1px solid rgba(255,255,255,0.08)',
+              fontWeight: s.status === 'running' ? 600 : 400,
+            }}>
+              {s.badge || s.sub}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Log */}
-      <div style={{
-        background: 'rgba(0,0,0,0.3)',
-        borderRadius: 8,
-        padding: '12px 14px',
-        fontFamily: 'monospace',
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.55)',
-        maxHeight: 140,
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 3,
-      }}>
-        {log.length === 0
-          ? <span style={{ color: 'rgba(255,255,255,0.25)' }}>로그 대기 중...</span>
-          : log.map((l, i) => <span key={i}>{l}</span>)
-        }
+      <div style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
+        {doneCount} / {steps.length} 완료
       </div>
     </div>
   );
