@@ -177,7 +177,7 @@ export default function Home() {
       />
 
       <main className="main-content">
-        <StepProgress step={step} />
+        {step !== 'input' && <StepProgress step={step} />}
 
         {errorMsg && (
           <div style={{

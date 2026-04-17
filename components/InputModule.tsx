@@ -65,8 +65,12 @@ export default function InputModule({
     <div>
       {/* Page header */}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 8 }}>카드뉴스를 만들어 보세요</h1>
-        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)' }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 10,
+          background: 'linear-gradient(135deg,#fff 30%,#a78bfa)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          카드뉴스를 만들어 보세요
+        </h1>
+        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)' }}>
           어떤 주제든 Gemini AI가 분석하고 감각적인 카드뉴스로 자동 변환합니다
         </p>
       </div>
