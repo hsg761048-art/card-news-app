@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { InputType, ImgSource, CardNews } from '@/types';
 
 interface InputModuleProps {
@@ -21,7 +21,13 @@ export default function InputModule({
   const [inputType, setInputType] = useState<InputType>('keyword');
   const [inputData, setInputData] = useState('');
   const [fileName, setFileName]   = useState('');
+  const [showPixabayInput, setShowPixabayInput] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // 키가 저장돼 있으면 입력란 숨기기 (hydration 후에도 적용)
+  useEffect(() => {
+    if (pixabayKey) setShowPixabayInput(false);
+  }, [pixabayKey]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,15 +215,44 @@ export default function InputModule({
 
           {imgSource === 'pixabay' && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', display: 'block', marginBottom: 6 }}>
-                Pixabay API Key
-              </label>
-              <input type="password" value={pixabayKey} onChange={e => setPixabayKey(e.target.value)}
-                placeholder="Pixabay API 키 입력" />
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
-                <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener noreferrer"
-                  style={{ color: '#6c63ff' }}>pixabay.com</a>에서 무료로 발급 가능
-              </p>
+              {pixabayKey && !showPixabayInput ? (
+                /* 키가 저장돼 있을 때: 간단한 표시 + 변경 버튼 */
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '8px 12px', borderRadius: 8,
+                  background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981' }} />
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Pixabay API 키 저장됨</span>
+                  </div>
+                  <button type="button" onClick={() => setShowPixabayInput(true)} style={{
+                    fontSize: 12, color: '#a78bfa', background: 'transparent',
+                    border: '1px solid rgba(108,99,255,0.3)', borderRadius: 6,
+                    padding: '3px 10px', cursor: 'pointer',
+                  }}>키 변경</button>
+                </div>
+              ) : (
+                /* 키가 없거나 변경 중일 때: 입력란 표시 */
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <label style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Pixabay API Key</label>
+                    {pixabayKey && (
+                      <button type="button" onClick={() => setShowPixabayInput(false)} style={{
+                        fontSize: 12, color: 'rgba(255,255,255,0.4)', background: 'transparent',
+                        border: 'none', cursor: 'pointer', padding: 0,
+                      }}>✕ 취소</button>
+                    )}
+                  </div>
+                  <input type="password" value={pixabayKey} onChange={e => setPixabayKey(e.target.value)}
+                    placeholder="Pixabay API 키 입력"
+                    onBlur={() => { if (pixabayKey) setShowPixabayInput(false); }} />
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+                    <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener noreferrer"
+                      style={{ color: '#6c63ff' }}>pixabay.com</a>에서 무료로 발급 가능
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
