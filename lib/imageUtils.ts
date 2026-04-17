@@ -1,5 +1,5 @@
 import { Card } from '@/types';
-import { CANVA_TEMPLATES, CATEGORY_STYLE } from './constants';
+import { CANVA_TEMPLATES, CATEGORY_STYLE, CATEGORY_STYLES } from './constants';
 
 export const imgLoadedCache = new Set<string>();
 
@@ -18,18 +18,22 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export function buildPollinationsUrl(
-  card: Card, category: string, format: string,
+  category: string, format: string,
   index: number, sessionSeed: number
 ): string {
-  const style = (CATEGORY_STYLE[category] || CATEGORY_STYLE['라이프스타일']).poll;
+  const styles = (CATEGORY_STYLES[category] || CATEGORY_STYLES['라이프스타일']).poll;
   const w = format === '9:16' ? 360 : 400;
   const h = format === '9:16' ? 640 : 400;
 
-  // 카드마다 고유한 seed
-  const seed = (sessionSeed + index * 7919) % 999983;
+  // 카드마다 완전히 다른 스타일 프롬프트 랜덤 선택 → 시각적으로 완전히 다른 이미지
+  const styleIdx = (sessionSeed + index * 3) % styles.length;
+  const style = styles[styleIdx];
 
-  // ★ 핵심: 프롬프트 텍스트 자체에 seed를 포함 → Pollinations 서버 캐시 우회
-  const prompt = `${style}, variant ${seed}, no text, cinematic, dark, 4k`;
+  // seed도 다르게
+  const seed = (sessionSeed * 17 + index * 7919) % 999983;
+
+  // 프롬프트 텍스트 자체가 매번 다름 → 서버 캐시 완전 우회
+  const prompt = `${style}, no text, no watermark, ultra realistic, 8k`;
 
   const params = new URLSearchParams({
     width: String(w), height: String(h),
@@ -40,10 +44,10 @@ export function buildPollinationsUrl(
 
 export function generateCardImageUrls(cards: Card[], category: string, format: string): Record<string, string> {
   const map: Record<string, string> = {};
-  // 매 생성마다 완전히 다른 sessionSeed (타임스탬프 + 랜덤)
-  const sessionSeed = Math.floor(Date.now() % 999983) + Math.floor(Math.random() * 100000);
+  // 타임스탬프 + 랜덤 → 같은 키워드를 연속으로 입력해도 완전히 다른 seed
+  const sessionSeed = (Date.now() + Math.floor(Math.random() * 999983)) % 999983;
   cards.forEach((card, i) => {
-    if (card.type !== 'end') map[card.id] = buildPollinationsUrl(card, category, format, i, sessionSeed);
+    if (card.type !== 'end') map[card.id] = buildPollinationsUrl(category, format, i, sessionSeed);
   });
   return map;
 }
@@ -69,7 +73,9 @@ export async function generatePixabayImageUrls(
   pixabayKey: string,
   onProgress: (i: number, total: number, title?: string) => void
 ): Promise<Record<string, string>> {
-  const keyword = (CATEGORY_STYLE[category] || CATEGORY_STYLE['라이프스타일']).pixabay;
+  const keywords = (CATEGORY_STYLES[category] || CATEGORY_STYLES['라이프스타일']).pixabay;
+  // 매번 다른 키워드 선택
+  const keyword = keywords[Math.floor(Math.random() * keywords.length)];
   const orient = format === '9:16' ? 'vertical' : 'horizontal';
   const targets = cards.filter(c => c.type !== 'end');
 

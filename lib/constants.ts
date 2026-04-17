@@ -1,15 +1,93 @@
 import { CanvaTemplate } from '@/types';
 
-export const CATEGORY_STYLE: Record<string, { poll: string; pixabay: string }> = {
-  '비즈니스/경제': { poll: 'modern corporate city skyline at night, blue indigo, glass buildings', pixabay: 'business finance city night' },
-  '건강/웰빙':     { poll: 'serene nature landscape, soft green light, misty mountains, zen',      pixabay: 'nature wellness meditation yoga' },
-  '기술/IT':       { poll: 'futuristic digital circuit, neon cyan purple, cyberpunk abstract',     pixabay: 'technology computer abstract digital' },
-  '라이프스타일':  { poll: 'elegant minimal lifestyle, warm golden bokeh, pastel cozy',            pixabay: 'lifestyle minimal cozy aesthetic' },
-  '교육/학습':     { poll: 'library interior, books golden light rays, warm amber',                pixabay: 'books library education study' },
-  '마케팅/SNS':    { poll: 'vibrant social media aesthetic, pink coral magenta, bold shapes',      pixabay: 'social media marketing colorful' },
-  '뉴스/시사':     { poll: 'dramatic editorial dark, navy charcoal, spotlight moody cinematic',    pixabay: 'newspaper journalism editorial' },
-  '자기계발':      { poll: 'epic sunrise mountain peaks, golden hour, silhouette motivational',    pixabay: 'motivation sunrise mountain success' },
+// 카테고리별 다양한 스타일 목록 (매 생성마다 랜덤 선택 → 완전히 다른 이미지)
+export const CATEGORY_STYLES: Record<string, { poll: string[]; pixabay: string[] }> = {
+  '비즈니스/경제': {
+    poll: [
+      'modern corporate city skyline at night, blue indigo, glass buildings, dramatic',
+      'stock market trading floor, dynamic energy, warm amber light, bokeh',
+      'sleek minimalist office, sunlight streaming, white marble, professional',
+      'aerial view of financial district, golden hour, skyscrapers, cinematic',
+      'boardroom with panoramic city view, dark navy, spotlight, moody',
+    ],
+    pixabay: ['business finance city night', 'office corporate professional', 'skyscraper aerial architecture', 'stock market financial', 'meeting boardroom corporate'],
+  },
+  '건강/웰빙': {
+    poll: [
+      'serene misty mountain lake at sunrise, soft green light, reflections, zen',
+      'lush tropical rainforest, dappled golden sunlight, vibrant green, peaceful',
+      'calm ocean beach at dusk, soft pink sky, waves, meditative',
+      'blooming cherry blossom path, soft pink petals, spring light, tranquil',
+      'yoga retreat garden, white flowers, morning mist, serenity, soft tones',
+    ],
+    pixabay: ['nature wellness meditation yoga', 'forest green peaceful', 'ocean beach sunset calm', 'cherry blossom spring', 'garden flowers tranquil'],
+  },
+  '기술/IT': {
+    poll: [
+      'futuristic digital circuit board, neon cyan purple, cyberpunk abstract glow',
+      'glowing holographic data network, deep blue, wireframe nodes, dark',
+      'AI neural network visualization, electric blue purple, abstract tech',
+      'quantum computer chip close-up, microscopic, metallic blue, dramatic light',
+      'server room corridor, electric blue light, reflective floor, cinematic dark',
+    ],
+    pixabay: ['technology computer abstract digital', 'circuit board electronic', 'data network blue', 'artificial intelligence tech', 'server datacenter'],
+  },
+  '라이프스타일': {
+    poll: [
+      'elegant minimal lifestyle flat lay, warm golden bokeh, pastel cozy morning',
+      'cozy cafe corner, warm espresso tones, soft bokeh, lifestyle aesthetic',
+      'luxury apartment interior, golden hour light, modern minimal, warm',
+      'rooftop garden at sunset, urban lifestyle, warm tones, atmospheric',
+      'artisan coffee workshop, warm brown tones, steam, craftsman aesthetic',
+    ],
+    pixabay: ['lifestyle minimal cozy aesthetic', 'cafe coffee lifestyle', 'interior design home', 'rooftop urban lifestyle', 'food artisan minimal'],
+  },
+  '교육/학습': {
+    poll: [
+      'grand library interior, towering bookshelves, golden light rays, warm amber',
+      'university lecture hall, dramatic perspective, architectural, soft light',
+      'open book with glowing pages, magical knowledge concept, dark background',
+      'chalkboard with equations, vintage school aesthetic, warm light, nostalgic',
+      'ancient library with floating books, fantasy study, amber glow, ethereal',
+    ],
+    pixabay: ['books library education study', 'university lecture hall', 'reading knowledge learning', 'classroom school education', 'books knowledge concept'],
+  },
+  '마케팅/SNS': {
+    poll: [
+      'vibrant social media aesthetic, pink coral magenta, bold geometric shapes',
+      'colorful gradient studio backdrop, trendy neon colors, dynamic composition',
+      'influencer lifestyle flat lay, vibrant colors, modern design, bold',
+      'abstract pop art background, bright yellow pink, bold graphic design',
+      'neon sign city night, vibrant colors, urban street style, trendy',
+    ],
+    pixabay: ['social media marketing colorful', 'influencer content creator', 'colorful gradient design', 'neon urban street', 'bold graphic design'],
+  },
+  '뉴스/시사': {
+    poll: [
+      'dramatic editorial dark studio, navy charcoal, spotlight moody cinematic',
+      'newspaper printing press, vintage industrial, warm sepia tones, dramatic',
+      'breaking news desk, cinematic blue cold light, professional broadcast',
+      'global map with light connections, dark world, geopolitical concept',
+      'protest rally silhouettes, dramatic sky, high contrast, photojournalism',
+    ],
+    pixabay: ['newspaper journalism editorial', 'press media news broadcast', 'world map global news', 'politics government news', 'documentary photojournalism'],
+  },
+  '자기계발': {
+    poll: [
+      'epic sunrise mountain peaks, golden hour, lone silhouette, motivational',
+      'winding road to bright horizon, inspirational journey, warm dawn colors',
+      'hot air balloon over misty valley, adventure freedom, golden light',
+      'staircase ascending into clouds, achievement concept, heavenly light',
+      'lone figure on cliff overlooking vast ocean, success perspective, dramatic',
+    ],
+    pixabay: ['motivation sunrise mountain success', 'road journey horizon inspire', 'hot air balloon adventure', 'achievement goal success', 'leadership vision perspective'],
+  },
 };
+
+// 하위 호환성 유지 (기존 코드 참조용)
+export const CATEGORY_STYLE: Record<string, { poll: string; pixabay: string }> = Object.fromEntries(
+  Object.entries(CATEGORY_STYLES).map(([k, v]) => [k, { poll: v.poll[0], pixabay: v.pixabay[0] }])
+);
 
 export const CATEGORY_EMOJI: Record<string, string> = {
   '비즈니스/경제':'💼','건강/웰빙':'🧘','기술/IT':'💻','라이프스타일':'✨',
