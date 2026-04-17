@@ -171,9 +171,13 @@ export default function Home() {
   return (
     <div className="page-container">
       <Header
-        onOpenHistory={user ? () => setShowHistory(true) : undefined}
+        onOpenHistory={() => setShowHistory(true)}
         geminiConnected={geminiConnected}
         geminiModel={geminiModel}
+        imgSource={imgSource}
+        showActions={step !== 'input'}
+        onChangeKey={() => setStep('input')}
+        onNewProject={handleNewProject}
       />
 
       <main className="main-content">
@@ -247,8 +251,13 @@ export default function Home() {
             cardImages={cardImages}
             category={category}
             format={format}
+            text={processedData.text}
             onBack={() => setStep('editor')}
             onNewProject={handleNewProject}
+            onSaveToCloud={user ? handleSaveToCloud : undefined}
+            isSaving={isSaving}
+            saveMsg={saveMsg}
+            isLoggedIn={!!user}
           />
         )}
       </main>

@@ -3,31 +3,50 @@
 import { useRef, useState } from 'react';
 import { Card } from '@/types';
 import CardRenderer from './CardRenderer';
+import { addLocalSave } from '@/lib/localSaves';
 
 interface ExportModuleProps {
   cards: Card[];
   cardImages: Record<string, string>;
   category: string;
   format: string;
+  text: string;
   onBack: () => void;
   onNewProject: () => void;
+  onSaveToCloud?: () => void;
+  isSaving?: boolean;
+  saveMsg?: string;
+  isLoggedIn?: boolean;
 }
 
 export default function ExportModule({
-  cards, cardImages, category, format, onBack, onNewProject,
+  cards, cardImages, category, format, text,
+  onBack, onNewProject,
+  onSaveToCloud, isSaving, saveMsg, isLoggedIn,
 }: ExportModuleProps) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
+  const [localSaveMsg, setLocalSaveMsg] = useState('');
 
   const isPortrait = format === '9:16';
   const previewW   = isPortrait ? 300 : 420;
+
+  function handleLocalSave() {
+    try {
+      addLocalSave({ category, cards, cardImages, text, savedAt: Date.now() });
+      setLocalSaveMsg('💾 보관함에 저장됨');
+      setTimeout(() => setLocalSaveMsg(''), 2500);
+    } catch {
+      setLocalSaveMsg('❌ 저장 실패');
+      setTimeout(() => setLocalSaveMsg(''), 2500);
+    }
+  }
 
   async function downloadAll() {
     setDownloading(true);
     setExportStatus('html2canvas 로딩 중...');
     try {
-      // Dynamic import to avoid SSR issues
       const html2canvas = (await import('html2canvas')).default;
       const JSZip       = (await import('jszip')).default;
       const zip = new JSZip();
@@ -83,7 +102,7 @@ export default function ExportModule({
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
         <button className="btn-ghost" onClick={onBack}>← 편집으로</button>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn-ghost" onClick={onNewProject}>🆕 새 프로젝트</button>
           <button className="btn-ghost" onClick={downloadCurrent} disabled={downloading}>
             📥 현재 카드 저장
@@ -93,6 +112,58 @@ export default function ExportModule({
               <><span className="spinner" style={{ width: 14, height: 14, verticalAlign: 'middle', marginRight: 6 }} />처리 중...</>
             ) : '📦 전체 ZIP 다운로드'}
           </button>
+        </div>
+      </div>
+
+      {/* Save to library banner */}
+      <div style={{
+        background: 'rgba(108,99,255,0.07)',
+        border: '1px solid rgba(108,99,255,0.18)',
+        borderRadius: 12,
+        padding: '14px 18px',
+        marginBottom: 16,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 22 }}>📚</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>나중에 다시 보고 싶다면 저장하세요</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+              {isLoggedIn ? '로컬 보관함 또는 클라우드에 저장할 수 있어요' : '로컬 보관함에 저장 · 로그인하면 클라우드도 사용 가능'}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {(localSaveMsg || saveMsg) && (
+            <span style={{ fontSize: 13, color: '#10b981' }}>{localSaveMsg || saveMsg}</span>
+          )}
+          <button
+            onClick={handleLocalSave}
+            style={{
+              padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              background: 'rgba(108,99,255,0.15)', border: '1px solid rgba(108,99,255,0.35)',
+              color: '#a78bfa', cursor: 'pointer', transition: 'all .15s',
+            }}
+          >
+            💾 보관함에 저장
+          </button>
+          {isLoggedIn && onSaveToCloud && (
+            <button
+              onClick={onSaveToCloud}
+              disabled={isSaving}
+              style={{
+                padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)',
+                color: '#10b981', cursor: isSaving ? 'not-allowed' : 'pointer', transition: 'all .15s',
+              }}
+            >
+              {isSaving ? '저장 중...' : '☁️ 클라우드 저장'}
+            </button>
+          )}
         </div>
       </div>
 
